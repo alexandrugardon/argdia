@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.3';
+const VERSION = '1.4';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -364,7 +364,9 @@ function getToken(interactive) {
       S.auth = true; saveS(); res(token);
     };
     tokenClient.error_callback = e => rej(new Error(e.type || 'eroare autentificare'));
-    tokenClient.requestAccessToken({ prompt: interactive ? (S.auth ? '' : 'consent') : '' });
+    const o = { prompt: interactive && !S.auth ? 'consent' : '' };
+    if (S.email) o.hint = S.email;
+    tokenClient.requestAccessToken(o);
   });
 }
 async function api(url, opts = {}) {
@@ -484,6 +486,13 @@ function init() {
   $('#icsBtn').onclick = makeICS;
   $('#csvBtn').onclick = exportCSV;
   window.addEventListener('online', scheduleSync);
+  // Reînnoiește accesul Google la prima atingere (browserul permite fereastra doar după un gest al utilizatorului)
+  let lastTry = 0;
+  document.addEventListener('pointerdown', () => {
+    if (S.auth && S.clientId && (!token || Date.now() > tokenExp - 60000) && Date.now() - lastTry > 600000) { lastTry = Date.now(); syncNow(false); }
+  }, true);
+  $('#gEmail').value = S.email || '';
+  $('#gEmail').onchange = e => { S.email = e.target.value.trim(); saveS(); };
   window.addEventListener('resize', () => { if (curTab === 'grafic') renderChart(); });
   if (S.lastSync) setStatus('Ultima sincronizare: ' + new Date(S.lastSync).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }));
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { });
