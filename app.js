@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.3';
+const VERSION = '2.4';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -66,6 +66,12 @@ function status(v, ctx) {
   if (v < lo) return v < lo * 0.85 ? 'bad' : 'warn';
   if (v > hi) return v > hi * 1.15 ? 'bad' : 'warn';
   return 'ok';
+}
+function diffText(v, ctx) {
+  const [lo, hi] = range(ctx);
+  if (v > hi) return '+' + Math.round(v - hi) + ' peste limită';
+  if (v < lo) return '−' + Math.round(lo - v) + ' sub limită';
+  return 'în interval';
 }
 const worst = arr => arr.includes('bad') ? 'bad' : arr.includes('warn') ? 'warn' : arr.length ? 'ok' : '';
 
@@ -147,7 +153,7 @@ function addExtraRow(x = {}) {
     const mv = toMg(v.value);
     if (!mv) { h.innerHTML = ''; return; }
     const st = status(mv, c.value);
-    h.innerHTML = `<span class="chip ${st}">${STAT_LABEL[st]}</span>`;
+    h.innerHTML = `<span class="chip ${st}">${diffText(mv, c.value)}</span>`;
   };
   const row = el('div', { class: 'card x-row' }, el('div', { class: 'top' }, 'Glicemie suplimentară', rm), el('div', { class: 'inp3' }, t, v, c), h);
   [t, v, c].forEach(e => e.addEventListener('input', () => { upd(); queueSave(); }));
@@ -167,7 +173,7 @@ function updHint(k) {
   const v = toMg($('#g_' + k).value), h = $('#h_' + k);
   if (!v) { h.innerHTML = ''; return; }
   const st = status(v, $('#c_' + k).value);
-  h.innerHTML = `<span class="chip ${st}">${STAT_LABEL[st]}</span>`;
+  h.innerHTML = `<span class="chip ${st}">${diffText(v, $('#c_' + k).value)}</span>`;
 }
 function loadDay(d) {
   curDate = d; $('#date').value = d;
