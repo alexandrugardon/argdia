@@ -116,3 +116,19 @@ input[type=date],input[type=time]{padding:10px 6px}
 .dlgbtn{display:flex;gap:10px}.dlgbtn button{flex:1}
 button.danger{background:var(--bad);color:#fff;border-color:var(--bad)}
 @media print{.overlay{display:none}}
+
+/* ---- Culori cu contrast mare ---- */
+:root{--ok:#1b7a2f;--warn:#f2a900;--bad:#d32020}
+.chip.ok,.cell.ok,td.ok{background:var(--ok);color:#fff}
+.chip.warn,.cell.warn,td.warn{background:var(--warn);color:#1d1b1a}
+.chip.bad,.cell.bad,td.bad{background:var(--bad);color:#fff}
+.chip{font-weight:700;padding:3px 11px}
+.cell.ok b,.cell.bad b{color:#fff}.cell.warn b{color:#1d1b1a}
+td.ok small,td.bad small{color:#fff}
+.dot{width:14px;height:14px}
+@media print{
+  td.ok,.chip.ok{background:#bfe8c6;color:#000}
+  td.warn,.chip.warn{background:#ffe08a;color:#000}
+  td.bad,.chip.bad{background:#f4a6a6;color:#000}
+  td.ok small,td.bad small{color:#000}
+}

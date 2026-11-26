@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.5';
+const VERSION = '2.6';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -279,7 +279,7 @@ function drawChart(canvas, from, to, h = 280) {
   pts.sort((a, b) => a.t - b.t);
   ctx.strokeStyle = col('--muted'); ctx.lineWidth = 1.2; ctx.beginPath();
   pts.forEach((p, i) => i ? ctx.lineTo(X(p.t), Y(p.v)) : ctx.moveTo(X(p.t), Y(p.v))); ctx.stroke();
-  pts.forEach(p => { ctx.fillStyle = col('--' + p.st); ctx.beginPath(); ctx.arc(X(p.t), Y(p.v), 4, 0, 7); ctx.fill(); });
+  pts.forEach(p => { ctx.fillStyle = col('--' + p.st); ctx.beginPath(); ctx.arc(X(p.t), Y(p.v), 5.5, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); });
   if (!pts.length) { ctx.fillStyle = col('--muted'); ctx.textAlign = 'center'; ctx.fillText('Nicio măsurătoare în perioada aleasă', W / 2, h / 2); }
 }
 function stats(from, to) {
