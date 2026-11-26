@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.8';
+const VERSION = '1.9';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -419,6 +419,8 @@ async function syncNow(interactive) {
   if (syncing) return;
   if (!S.clientId) { if (interactive) alert('Introdu mai întâi Google Client ID în Setări.'); return; }
   if (!navigator.onLine) { setStatus('Offline – se sincronizează mai târziu'); return; }
+  // Sincronizarea automată nu deschide niciodată ferestre de autentificare; doar butonul o face.
+  if (!interactive && !(token && Date.now() < tokenExp - 60000)) { setStatus('⚠ De sincronizat – apasă „Sincronizează”'); return; }
   syncing = true; setStatus('Se sincronizează…');
   try {
     if (!tokenClient) initGoogle();
@@ -493,11 +495,6 @@ function init() {
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; $('#installBtn').hidden = false; });
   $('#installBtn').onclick = async () => { if (!installEv) return; installEv.prompt(); await installEv.userChoice; installEv = null; $('#installBtn').hidden = true; };
   window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; });
-  // Reînnoiește accesul Google la prima atingere (browserul permite fereastra doar după un gest al utilizatorului)
-  let lastTry = 0;
-  document.addEventListener('pointerdown', () => {
-    if (S.auth && S.clientId && (!token || Date.now() > tokenExp - 60000) && Date.now() - lastTry > 600000) { lastTry = Date.now(); syncNow(false); }
-  }, true);
   $('#gEmail').value = S.email || '';
   $('#gEmail').onchange = e => { S.email = e.target.value.trim(); saveS(); };
   window.addEventListener('resize', () => { if (curTab === 'grafic') renderChart(); });
