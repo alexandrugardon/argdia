@@ -1,5 +1,5 @@
-const V = 'argdia-v3';
-const FILES = ['./', 'index.html', 'app.js', 'style.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const V = 'argdia-v4';
+const FILES = ['./', 'index.html', 'app.js?v=1.3', 'style.css?v=1.3', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(FILES)));
   self.skipWaiting();
@@ -12,7 +12,7 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request).then(r => {
+    fetch(e.request, { cache: 'no-cache' }).then(r => {
       const cp = r.clone();
       caches.open(V).then(c => c.put(e.request, cp));
       return r;
