@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.0';
+const VERSION = '2.1';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {

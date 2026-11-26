@@ -4,14 +4,14 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--acc);color:#fff;position:sticky;top:0;z-index:5}
 header h1{font-size:1.2rem;margin:0;flex:1}
-header .muted{color:#ffe;font-size:.8rem}
+header .muted{color:#ffe;font-size:.95rem}
 header button{background:#fff2;color:#fff;border:1px solid #fff6}
 nav{display:flex;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:50px;z-index:4}
 nav button{flex:1;min-width:76px;border:0;background:none;padding:12px 8px;color:var(--muted);font-weight:600;border-bottom:3px solid transparent}
 nav button.on{color:var(--acc);border-bottom-color:var(--acc)}
 main{max-width:760px;margin:0 auto;padding:12px 14px 60px}
 h2{font-size:1.05rem;margin:20px 0 8px}
-label{display:block;font-size:.85rem;color:var(--muted);margin:8px 0}
+label{display:block;font-size:1rem;color:var(--muted);margin:8px 0}
 input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:4px}
 button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 14px;cursor:pointer}
 button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
@@ -23,26 +23,26 @@ button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
 .card .top{display:flex;justify-content:space-between;font-weight:600;margin-bottom:6px}
 .card .inp{display:grid;grid-template-columns:1fr 1.3fr;gap:8px}
 .card .inp input,.card .inp select{margin:0}
-.hint{font-size:.85rem;margin-top:6px;min-height:1.2em}
-.chip{display:inline-block;border-radius:99px;padding:2px 10px;font-size:.8rem;font-weight:600}
+.hint{font-size:1rem;margin-top:6px;min-height:1.2em}
+.chip{display:inline-block;border-radius:99px;padding:2px 10px;font-size:.95rem;font-weight:600}
 .chip.ok,.cell.ok{background:var(--okbg);color:var(--ok)}
 .chip.warn,.cell.warn{background:var(--warnbg);color:#8a6500}
 .chip.bad,.cell.bad{background:var(--badbg);color:var(--bad)}
-.muted{color:var(--muted);font-size:.85rem}
+.muted{color:var(--muted);font-size:1rem}
 .seg{display:flex;gap:6px;margin-bottom:10px}
 .seg button{flex:1}.seg button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 canvas{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px}
-.legend{font-size:.85rem;color:var(--muted)}
+.legend{font-size:1rem;color:var(--muted)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px}
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
 #calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0}
-#calGrid .hd{text-align:center;font-size:.75rem;color:var(--muted)}
-.cell{min-height:58px;border-radius:8px;border:1px solid var(--line);padding:3px 4px;font-size:.75rem;cursor:pointer;background:var(--card)}
-.cell b{display:block;font-size:.8rem}
+#calGrid .hd{text-align:center;font-size:.95rem;color:var(--muted)}
+.cell{min-height:58px;border-radius:8px;border:1px solid var(--line);padding:3px 4px;font-size:.9rem;cursor:pointer;background:var(--card)}
+.cell b{display:block;font-size:1rem}
 .cell.empty{background:none;border:0;cursor:default}
 .hist{display:block;width:100%;text-align:left;margin-bottom:8px}
-.hist .meals{color:var(--muted);font-size:.8rem;margin-top:4px}
-table{width:100%;border-collapse:collapse;font-size:.8rem;margin:10px 0}
+.hist .meals{color:var(--muted);font-size:1rem;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:.95rem;margin:10px 0}
 th,td{border:1px solid var(--line);padding:4px 5px;text-align:left;vertical-align:top}
 td.ok{background:var(--okbg)}td.warn{background:var(--warnbg)}td.bad{background:var(--badbg)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:10px 0}
@@ -69,9 +69,9 @@ input[type=date],input[type=time]{min-height:44px}
 button{min-height:42px}
 header{flex-wrap:wrap;row-gap:2px;padding:8px 12px}
 header h1{font-size:1.1rem;flex:1 1 auto}
-header #syncStatus{order:5;flex:1 0 100%;font-size:.75rem}
+header #syncStatus{order:5;flex:1 0 100%;font-size:.95rem}
 nav{flex-wrap:wrap;overflow:visible;top:auto;position:static}
-nav button{flex:1 1 33.33%;min-width:0;padding:11px 4px;font-size:.9rem}
+nav button{flex:1 1 33.33%;min-width:0;padding:11px 4px;font-size:1rem}
 .datebar{flex-wrap:wrap}
 .datebar input{flex:1 1 140px}
 .datebar button{flex:0 0 auto}
@@ -85,7 +85,7 @@ nav button{flex:1 1 33.33%;min-width:0;padding:11px 4px;font-size:.9rem}
   .row2{gap:8px}
   .stats{grid-template-columns:repeat(2,1fr)}
   #calGrid{gap:3px}
-  .cell{min-height:52px;padding:2px 3px;font-size:.7rem}
+  .cell{min-height:52px;padding:2px 3px;font-size:.85rem}
 }
 @media screen and (max-width:600px){
   #repOut table,#repOut tbody,#repOut tr,#repOut td{display:block;width:100%}
@@ -97,4 +97,10 @@ nav button{flex:1 1 33.33%;min-width:0;padding:11px 4px;font-size:.9rem}
   #repOut td:first-child{font-weight:700}
 }
 .row2{align-items:end}
-.brand{flex:1 1 auto;line-height:1.1}.brand h1{margin:0}.brand small{display:block;font-size:.7rem;opacity:.85;margin-left:2px}
+.brand{flex:1 1 auto;line-height:1.1}.brand h1{margin:0}.brand small{display:block;font-size:.9rem;opacity:.85;margin-left:2px}
+
+.card .hint small,#repOut small,.card .muted,small{font-size:.95rem}
+.stats div{font-size:1rem}
+.row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+input[type=date],input[type=time]{padding:10px 6px}
+@media (max-width:340px){.row2{grid-template-columns:minmax(0,1fr)}}
