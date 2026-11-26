@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.6';
+const VERSION = '1.7';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -299,12 +299,12 @@ function renderReport() {
     h += `<tr><td>${roDate(d)}</td>`;
     for (const [k] of SLOTS) {
       const g = r.g && r.g[k];
-      h += g && g.v ? `<td class="${status(g.v, g.c)}">${fmt(g.v)}<br><small>${esc(CTXL[g.c] || '')}</small></td>` : '<td></td>';
+      h += g && g.v ? `<td data-l="${SLOTS.find(x => x[0] === k)[1]}" class="${status(g.v, g.c)}">${fmt(g.v)}<br><small>${esc(CTXL[g.c] || '')}</small></td>` : '<td></td>';
     }
-    h += '<td>' + measures(r).filter(m => m.slot === 'x').map(m => `<span class="chip ${m.st}">${m.short} ${fmt(m.v)}</span> <small>${esc(CTXL[m.c] || '')}</small>`).join('<br>') + '</td>';
+    h += '<td data-l="Suplimentare">' + measures(r).filter(m => m.slot === 'x').map(m => `<span class="chip ${m.st}">${m.short} ${fmt(m.v)}</span> <small>${esc(CTXL[m.c] || '')}</small>`).join('<br>') + '</td>';
     const meals = MEALS.map(([k, l]) => r.m && r.m[k] ? `<b>${l}:</b> ${esc(r.m[k])}` : '').filter(Boolean).join('<br>');
     const oth = [r.ins && 'Insulină: ' + esc(r.ins) + ' u', r.act && 'Activitate: ' + esc(r.act), r.kg && r.kg + ' kg', r.ta && 'TA ' + esc(r.ta), r.note && esc(r.note)].filter(Boolean).join('<br>');
-    h += `<td>${meals}</td><td>${oth}</td></tr>`;
+    h += `<td data-l="Mâncare">${meals}</td><td data-l="Alte">${oth}</td></tr>`;
   }
   h += '</table>';
   $('#repOut').innerHTML = h;
