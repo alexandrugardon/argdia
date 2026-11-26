@@ -1,5 +1,5 @@
-const V = 'argdia-v15';
-const FILES = ['./', 'index.html', 'app.js?v=2.4', 'style.css?v=2.4', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const V = 'argdia-v16';
+const FILES = ['./', 'index.html', 'app.js?v=2.5', 'style.css?v=2.5', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(FILES)));
   self.skipWaiting();

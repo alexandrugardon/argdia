@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.4';
+const VERSION = '2.5';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -90,6 +90,20 @@ function measures(rec) {
   return out;
 }
 
+/* ---------- Confirmare ---------- */
+function confirmBox(msg, okLabel = 'Șterge') {
+  return new Promise(res => {
+    const done = v => { ov.remove(); document.removeEventListener('keydown', key); res(v); };
+    const key = e => { if (e.key === 'Escape') done(false); };
+    const no = el('button', { type: 'button', onclick: () => done(false) }, 'Anulează');
+    const yes = el('button', { type: 'button', class: 'danger', onclick: () => done(true) }, okLabel);
+    const ov = el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true', onclick: e => { if (e.target === ov) done(false); } },
+      el('div', { class: 'dlg' }, el('p', {}, msg), el('div', { class: 'dlgbtn' }, no, yes)));
+    document.addEventListener('keydown', key);
+    document.body.append(ov); no.focus();
+  });
+}
+
 /* ---------- Câmpuri numerice (fără sugestii de autofill, doar cifre) ---------- */
 function numeric(inp, dec) {
   // Câmp editabil care NU este <input>: Android nu îl tratează ca fiind completabil automat,
@@ -148,7 +162,7 @@ function addExtraRow(x = {}) {
   const c = el('select', { class: 'x-c', 'aria-label': 'Context' }, EXTRA_OPTS.map(([a, b]) => el('option', { value: a }, b)));
   c.value = x.c === 'dupa' ? 'p2' : (x.c || 'spot');
   const h = el('div', { class: 'hint' });
-  const rm = el('button', { type: 'button', 'aria-label': 'Șterge măsurătoarea', onclick: () => { row.remove(); queueSave(); } }, '✕');
+  const rm = el('button', { type: 'button', 'aria-label': 'Șterge măsurătoarea', onclick: async () => { const mv = toMg(v.value); if (mv && !(await confirmBox(`Ștergi glicemia suplimentară de la ${t.value}: ${mv} mg/dL?`))) return; row.remove(); queueSave(); } }, '✕');
   const upd = () => {
     const mv = toMg(v.value);
     if (!mv) { h.innerHTML = ''; return; }
