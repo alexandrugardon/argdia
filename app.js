@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.5';
+const VERSION = '1.6';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -489,6 +489,10 @@ function init() {
   $('#icsBtn').onclick = makeICS;
   $('#csvBtn').onclick = exportCSV;
   window.addEventListener('online', scheduleSync);
+  let installEv = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; $('#installBtn').hidden = false; });
+  $('#installBtn').onclick = async () => { if (!installEv) return; installEv.prompt(); await installEv.userChoice; installEv = null; $('#installBtn').hidden = true; };
+  window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; });
   // Reînnoiește accesul Google la prima atingere (browserul permite fereastra doar după un gest al utilizatorului)
   let lastTry = 0;
   document.addEventListener('pointerdown', () => {

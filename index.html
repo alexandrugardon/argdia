@@ -8,11 +8,12 @@
 <meta name="theme-color" content="#b3261e">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="style.css?v=1.5">
+<link rel="stylesheet" href="style.css?v=1.6">
 </head>
 <body>
 <header class="noprint">
   <h1>🩸 ARGDIA</h1>
+  <button id="installBtn" hidden>📲 Instalează</button>
   <span id="syncStatus" class="muted"></span>
   <button id="syncBtn" title="Sincronizează cu Google Drive">⟳ Sincronizează</button>
 </header>
@@ -125,7 +126,7 @@
     <p class="muted">Versiune <span id="ver"></span></p>
   </section>
 </main>
-<script src="app.js?v=1.5"></script>
+<script src="app.js?v=1.6"></script>
 <script src="https://accounts.google.com/gsi/client" async defer onload="window.gsiReady&&window.gsiReady()"></script>
 </body>
 </html>
