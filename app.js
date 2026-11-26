@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.2';
+const VERSION = '2.3';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -36,6 +36,7 @@ const DEF_S = {
 };
 let S = LS.get('argdia_settings', {});
 S = { ...DEF_S, ...S, th: { ...DEF_S.th, ...(S.th || {}) }, times: { ...DEF_S.times, ...(S.times || {}) } };
+S.unit = 'mg'; // doar mg/dL
 let DB = LS.get('argdia_data', {});
 const saveS = () => LS.set('argdia_settings', S);
 const saveDB = () => LS.set('argdia_data', DB);
@@ -50,7 +51,6 @@ const roDate = s => parseD(s).toLocaleDateString('ro-RO', { weekday: 'short', da
 const unitName = () => S.unit === 'mg' ? 'mg/dL' : 'mmol/L';
 const fmt = v => S.unit === 'mg' ? String(Math.round(v)) : (v / 18).toFixed(1);
 const toMg = x => { const n = parseFloat(String(x).replace(',', '.')); if (!isFinite(n) || n <= 0) return null; return S.unit === 'mg' ? Math.round(n) : Math.round(n * 18); };
-const bothUnits = v => `${Math.round(v)} mg/dL = ${(v / 18).toFixed(1)} mmol/L`;
 
 function range(ctx) {
   const t = S.th;
@@ -146,8 +146,8 @@ function addExtraRow(x = {}) {
   const upd = () => {
     const mv = toMg(v.value);
     if (!mv) { h.innerHTML = ''; return; }
-    const st = status(mv, c.value), other = S.unit === 'mg' ? (mv / 18).toFixed(1) + ' mmol/L' : mv + ' mg/dL';
-    h.innerHTML = `<span class="chip ${st}">${STAT_LABEL[st]}</span> <span class="muted">= ${other}</span>`;
+    const st = status(mv, c.value);
+    h.innerHTML = `<span class="chip ${st}">${STAT_LABEL[st]}</span>`;
   };
   const row = el('div', { class: 'card x-row' }, el('div', { class: 'top' }, 'Glicemie suplimentară', rm), el('div', { class: 'inp3' }, t, v, c), h);
   [t, v, c].forEach(e => e.addEventListener('input', () => { upd(); queueSave(); }));
@@ -167,8 +167,7 @@ function updHint(k) {
   const v = toMg($('#g_' + k).value), h = $('#h_' + k);
   if (!v) { h.innerHTML = ''; return; }
   const st = status(v, $('#c_' + k).value);
-  const other = S.unit === 'mg' ? (v / 18).toFixed(1) + ' mmol/L' : v + ' mg/dL';
-  h.innerHTML = `<span class="chip ${st}">${STAT_LABEL[st]}</span> <span class="muted">= ${other}</span>`;
+  h.innerHTML = `<span class="chip ${st}">${STAT_LABEL[st]}</span>`;
 }
 function loadDay(d) {
   curDate = d; $('#date').value = d;
@@ -341,7 +340,6 @@ function renderReport() {
 
 /* ---------- Setări, CSV, memento-uri ---------- */
 function loadSettingsUI() {
-  $('#unit').value = S.unit;
   for (const k of Object.keys(S.th)) $('#th_' + k).value = S.th[k];
   $('#clientId').value = S.clientId;
   for (const k of ['dim', 'pra', 'sea', 'i1', 'i2']) $('#t_' + k).value = S.times[k];
@@ -512,7 +510,6 @@ function init() {
   $('#repTo').value = today(); $('#repFrom').value = addDays(today(), -29);
   $('#repGo').onclick = renderReport;
   $('#repPrint').onclick = () => { renderReport(); setTimeout(() => window.print(), 300); };
-  $('#unit').onchange = e => { saveNow(); S.unit = e.target.value; saveS(); buildForms(); fillSuggestions(); loadDay(curDate); refreshView(); };
   for (const k of Object.keys(S.th)) $('#th_' + k).onchange = e => { const v = parseInt(e.target.value, 10); if (v > 0) { S.th[k] = v; saveS(); loadDay(curDate); } };
   $('#clientId').onchange = e => { S.clientId = e.target.value.trim(); S.sheetId = ''; S.auth = false; saveS(); tokenClient = null; initGoogle(); loadSettingsUI(); };
   for (const k of ['dim', 'pra', 'sea', 'i1', 'i2']) $('#t_' + k).onchange = e => { S.times[k] = e.target.value; saveS(); };
