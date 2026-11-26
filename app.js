@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.1';
+const VERSION = '1.2';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -17,7 +17,8 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 
 const SLOTS = [['dim', 'Dimineața'], ['pra', 'Prânz'], ['sea', 'Seara']];
 const CTX = [['ajeun', 'À jeun'], ['inainte', 'Înainte de masă'], ['dupa', '2h după masă']];
-const CTXL = Object.fromEntries(CTX);
+const CTX_X = [...CTX, ['spot', 'Spontană (la nevoie)']];
+const CTXL = Object.fromEntries(CTX_X);
 const DEF_CTX = { dim: 'ajeun', pra: 'inainte', sea: 'inainte' };
 const MEALS = [['mic', 'Mic dejun'], ['gdim', 'Gustare dimineață'], ['pranz', 'Prânz'], ['gdupa', 'Gustare după-amiază'], ['cina', 'Cină']];
 const STAT_LABEL = { ok: 'în interval', warn: 'ușor în afara', bad: 'în afara intervalului' };
@@ -56,6 +57,7 @@ function range(ctx) {
   if (ctx === 'inainte') return [t.iMin, t.iMax];
   return [t.low, t.dMax];
 }
+const nowHM = () => new Date().toTimeString().slice(0, 5);
 function status(v, ctx) {
   const [lo, hi] = range(ctx);
   if (v < lo) return v < lo * 0.85 ? 'bad' : 'warn';
@@ -66,11 +68,16 @@ const worst = arr => arr.includes('bad') ? 'bad' : arr.includes('warn') ? 'warn'
 
 function measures(rec) {
   const out = [];
-  if (!rec || !rec.g) return out;
-  for (const [k, label] of SLOTS) {
+  if (!rec) return out;
+  if (rec.g) for (const [k, label] of SLOTS) {
     const g = rec.g[k];
-    if (g && g.v) out.push({ slot: k, label, v: g.v, c: g.c || DEF_CTX[k], st: status(g.v, g.c || DEF_CTX[k]) });
+    if (g && g.v) { const c = g.c || DEF_CTX[k]; out.push({ slot: k, label, short: label.slice(0, 3) + '.', hour: slotHour(k), v: g.v, c, st: status(g.v, c) }); }
   }
+  (rec.x || []).forEach(x => {
+    if (!x || !x.v) return;
+    const [h, m] = (x.t || '12:00').split(':').map(Number), c = x.c || 'spot';
+    out.push({ slot: 'x', label: 'Spontană ' + x.t, short: '⚡' + x.t, hour: h + (m || 0) / 60, v: x.v, c, st: status(x.v, c) });
+  });
   return out;
 }
 
@@ -97,6 +104,25 @@ function buildForms() {
     inp.addEventListener('input', queueSave);
   }
 }
+function addExtraRow(x = {}) {
+  const t = el('input', { type: 'time', class: 'x-t', 'aria-label': 'Ora măsurării' }); t.value = x.t || nowHM();
+  const v = el('input', { type: 'text', inputmode: 'decimal', class: 'x-v', placeholder: unitName(), 'aria-label': 'Glicemie suplimentară' });
+  if (x.v) v.value = fmt(x.v);
+  const c = el('select', { class: 'x-c', 'aria-label': 'Context' }, CTX_X.map(([a, b]) => el('option', { value: a }, b)));
+  c.value = x.c || 'spot';
+  const h = el('div', { class: 'hint' });
+  const rm = el('button', { type: 'button', 'aria-label': 'Șterge măsurătoarea', onclick: () => { row.remove(); queueSave(); } }, '✕');
+  const upd = () => {
+    const mv = toMg(v.value);
+    if (!mv) { h.innerHTML = ''; return; }
+    const st = status(mv, c.value), other = S.unit === 'mg' ? (mv / 18).toFixed(1) + ' mmol/L' : mv + ' mg/dL';
+    h.innerHTML = `<span class="chip ${st}">${STAT_LABEL[st]}</span> <span class="muted">= ${other}</span>`;
+  };
+  const row = el('div', { class: 'card x-row' }, el('div', { class: 'top' }, 'Glicemie suplimentară', rm), el('div', { class: 'inp3' }, t, v, c), h);
+  [t, v, c].forEach(e => e.addEventListener('input', () => { upd(); queueSave(); }));
+  upd(); $('#extraForm').append(row);
+  return row;
+}
 function fillSuggestions() {
   for (const [k] of MEALS) {
     const cnt = {};
@@ -122,15 +148,17 @@ function loadDay(d) {
     $('#c_' + k).value = g.c || DEF_CTX[k];
     updHint(k);
   }
+  $('#extraForm').innerHTML = ''; (r.x || []).forEach(addExtraRow);
   for (const [k] of MEALS) $('#m_' + k).value = (r.m && r.m[k]) || '';
   $('#ins').value = r.ins || ''; $('#act').value = r.act || ''; $('#kg').value = r.kg || ''; $('#ta').value = r.ta || ''; $('#note').value = r.note || '';
   $('#saved').textContent = '';
 }
 function collect() {
-  const r = { g: {}, m: {}, ins: $('#ins').value.trim(), act: $('#act').value.trim(), kg: $('#kg').value.trim(), ta: $('#ta').value.trim(), note: $('#note').value.trim() };
+  const r = { g: {}, x: [], m: {}, ins: $('#ins').value.trim(), act: $('#act').value.trim(), kg: $('#kg').value.trim(), ta: $('#ta').value.trim(), note: $('#note').value.trim() };
   for (const [k] of SLOTS) { const v = toMg($('#g_' + k).value); if (v) r.g[k] = { v, c: $('#c_' + k).value }; }
+  r.x = $$('#extraForm .x-row').map(row => ({ t: row.querySelector('.x-t').value, v: toMg(row.querySelector('.x-v').value), c: row.querySelector('.x-c').value })).filter(o => o.v).sort((a, b) => a.t.localeCompare(b.t));
   for (const [k] of MEALS) { const t = $('#m_' + k).value.trim(); if (t) r.m[k] = t; }
-  const empty = !Object.keys(r.g).length && !Object.keys(r.m).length && !r.ins && !r.act && !r.kg && !r.ta && !r.note;
+  const empty = !Object.keys(r.g).length && !r.x.length && !Object.keys(r.m).length && !r.ins && !r.act && !r.kg && !r.ta && !r.note;
   return empty ? null : r;
 }
 function queueSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 600); }
@@ -151,7 +179,7 @@ function renderHist() {
   if (!days.length) { box.append(el('p', { class: 'muted' }, 'Nu ai încă nicio înregistrare.')); return; }
   for (const d of days) {
     const r = DB[d];
-    const chips = measures(r).map(m => `<span class="chip ${m.st}">${esc(m.label.slice(0, 3))}. ${fmt(m.v)}</span>`).join(' ');
+    const chips = measures(r).map(m => `<span class="chip ${m.st}">${esc(m.short)} ${fmt(m.v)}</span>`).join(' ');
     const meals = MEALS.map(([k, l]) => r.m && r.m[k] ? l + ': ' + esc(r.m[k]) : '').filter(Boolean).join(' · ');
     const b = el('button', { class: 'hist', onclick: () => { openDay(d); } });
     b.innerHTML = `<b>${roDate(d)}</b><br>${chips || '<span class="muted">fără glicemie</span>'}<div class="meals">${r.ins ? '💉 ' + esc(r.ins) + ' u · ' : ''}${meals}</div>`;
@@ -177,7 +205,7 @@ function drawChart(canvas, from, to, h = 280) {
   for (const d of live()) {
     if (d < from || d > to) continue;
     const base = parseD(d).getTime();
-    measures(DB[d]).forEach(m => pts.push({ t: base + slotHour(m.slot) * 3600000, v: m.v, st: m.st }));
+    measures(DB[d]).forEach(m => pts.push({ t: base + m.hour * 3600000, v: m.v, st: m.st }));
   }
   const L = 38, R = 10, T = 12, B = 26, pw = W - L - R, ph = h - T - B;
   let lo = 50, hi = 180;
@@ -208,7 +236,7 @@ function stats(from, to) {
   const all = []; const bySlot = { dim: [], pra: [], sea: [] };
   for (const d of live()) {
     if (d < from || d > to) continue;
-    measures(DB[d]).forEach(m => { all.push(m); bySlot[m.slot].push(m.v); });
+    measures(DB[d]).forEach(m => { all.push(m); if (bySlot[m.slot]) bySlot[m.slot].push(m.v); });
   }
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
   return {
@@ -262,7 +290,7 @@ function renderReport() {
   h += statHtml(stats(from, to));
   h += '<canvas id="repChart" style="width:100%"></canvas>';
   h += `<p class="muted">Praguri folosite (mg/dL): à jeun ${S.th.fMin}–${S.th.fMax}; înainte de masă ${S.th.iMin}–${S.th.iMax}; 2h după masă ${S.th.low}–${S.th.dMax}.</p>`;
-  h += '<table><tr><th>Data</th>' + SLOTS.map(([, l]) => `<th>${l}</th>`).join('') + '<th>Mâncare</th><th>Alte</th></tr>';
+  h += '<table><tr><th>Data</th>' + SLOTS.map(([, l]) => `<th>${l}</th>`).join('') + '<th>Suplimentare</th><th>Mâncare</th><th>Alte</th></tr>';
   for (const d of days) {
     const r = DB[d];
     h += `<tr><td>${roDate(d)}</td>`;
@@ -270,6 +298,7 @@ function renderReport() {
       const g = r.g && r.g[k];
       h += g && g.v ? `<td class="${status(g.v, g.c)}">${fmt(g.v)}<br><small>${esc(CTXL[g.c] || '')}</small></td>` : '<td></td>';
     }
+    h += '<td>' + measures(r).filter(m => m.slot === 'x').map(m => `<span class="chip ${m.st}">${m.short} ${fmt(m.v)}</span>`).join(' ') + '</td>';
     const meals = MEALS.map(([k, l]) => r.m && r.m[k] ? `<b>${l}:</b> ${esc(r.m[k])}` : '').filter(Boolean).join('<br>');
     const oth = [r.ins && 'Insulină: ' + esc(r.ins) + ' u', r.act && 'Activitate: ' + esc(r.act), r.kg && r.kg + ' kg', r.ta && 'TA ' + esc(r.ta), r.note && esc(r.note)].filter(Boolean).join('<br>');
     h += `<td>${meals}</td><td>${oth}</td></tr>`;
@@ -360,12 +389,12 @@ function tableRows() {
   const head = ['Data'];
   SLOTS.forEach(([k, l]) => head.push('Glicemie ' + l + ' (mg/dL)', 'Context ' + l));
   MEALS.forEach(([, l]) => head.push(l));
-  head.push('Activitate', 'Greutate', 'Tensiune', 'Note', 'Actualizat', 'Sters', 'Insulina (unitati)');
+  head.push('Activitate', 'Greutate', 'Tensiune', 'Note', 'Actualizat', 'Sters', 'Insulina (unitati)', 'Glicemii suplimentare (ora=mg/dL=context)');
   const rows = Object.keys(DB).sort().map(d => {
     const r = DB[d], row = [d];
     SLOTS.forEach(([k]) => { const g = r.g && r.g[k]; row.push(g ? g.v : '', g ? g.c : ''); });
     MEALS.forEach(([k]) => row.push((r.m && r.m[k]) || ''));
-    row.push(r.act || '', r.kg || '', r.ta || '', r.note || '', r.upd || '', r.del ? 'da' : '', r.ins || '');
+    row.push(r.act || '', r.kg || '', r.ta || '', r.note || '', r.upd || '', r.del ? 'da' : '', r.ins || '', (r.x || []).map(x => `${x.t}=${x.v}=${x.c}`).join(';'));
     return row;
   });
   return { head, rows };
@@ -378,6 +407,7 @@ function rowToRec(row) {
   r.act = String(row[i++] ?? ''); r.kg = String(row[i++] ?? ''); r.ta = String(row[i++] ?? ''); r.note = String(row[i++] ?? '');
   r.upd = String(row[i++] ?? ''); if (row[i] === 'da') r.del = true;
   r.ins = String(row[i + 1] ?? '');
+  r.x = String(row[i + 2] ?? '').split(';').filter(Boolean).map(p => { const [t, v, c] = p.split('='); return { t, v: Number(v), c: c || 'spot' }; }).filter(o => o.v);
   return r;
 }
 async function syncNow(interactive) {
@@ -433,6 +463,7 @@ function init() {
   $$('#tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
   $('#date').addEventListener('change', e => { saveNow(); loadDay(e.target.value || today()); });
   $('#prevDay').onclick = () => { saveNow(); loadDay(addDays(curDate, -1)); };
+  $('#addExtra').onclick = () => { const r = addExtraRow(); r.querySelector('.x-v').focus(); queueSave(); };
   $('#nextDay').onclick = () => { saveNow(); loadDay(addDays(curDate, 1)); };
   $('#todayBtn').onclick = () => { saveNow(); loadDay(today()); };
   ['ins', 'act', 'kg', 'ta', 'note'].forEach(i => $('#' + i).addEventListener('input', queueSave));

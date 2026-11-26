@@ -55,3 +55,8 @@ td.ok{background:var(--okbg)}td.warn{background:var(--warnbg)}td.bad{background:
   body{font-size:11pt}
   td.ok,td.warn,td.bad,.chip{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+.card .inp3{display:grid;grid-template-columns:.9fr 1fr 1.3fr;gap:8px}
+.card .inp3 input,.card .inp3 select{margin:0}
+.card .top button{padding:2px 9px}
+#addExtra{width:100%;margin-bottom:10px}
