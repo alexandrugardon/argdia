@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.4';
+const VERSION = '1.5';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -17,8 +17,9 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 
 const SLOTS = [['dim', 'Dimineața'], ['pra', 'Prânz'], ['sea', 'Seara']];
 const CTX = [['ajeun', 'À jeun'], ['inainte', 'Înainte de masă'], ['dupa', '2h după masă']];
-const CTX_X = [...CTX, ['spot', 'Spontană (la nevoie)']];
-const CTXL = Object.fromEntries(CTX_X);
+const PN = Array.from({ length: 12 }, (_, i) => ['p' + (i + 1), (i + 1) + (i === 0 ? ' oră' : ' ore') + ' după masă']);
+const EXTRA_OPTS = [['spot', 'Spontană (la nevoie)'], ['ajeun', 'À jeun'], ['inainte', 'Înainte de masă'], ...PN];
+const CTXL = Object.fromEntries([...CTX, ...EXTRA_OPTS]);
 const DEF_CTX = { dim: 'ajeun', pra: 'inainte', sea: 'inainte' };
 const MEALS = [['mic', 'Mic dejun'], ['gdim', 'Gustare dimineață'], ['pranz', 'Prânz'], ['gdupa', 'Gustare după-amiază'], ['cina', 'Cină']];
 const STAT_LABEL = { ok: 'în interval', warn: 'ușor în afara', bad: 'în afara intervalului' };
@@ -55,6 +56,8 @@ function range(ctx) {
   const t = S.th;
   if (ctx === 'ajeun') return [t.fMin, t.fMax];
   if (ctx === 'inainte') return [t.iMin, t.iMax];
+  const m = /^p(\d+)$/.exec(ctx);
+  if (m && +m[1] >= 4) return [t.iMin, t.iMax];
   return [t.low, t.dMax];
 }
 const nowHM = () => new Date().toTimeString().slice(0, 5);
@@ -108,8 +111,8 @@ function addExtraRow(x = {}) {
   const t = el('input', { type: 'time', class: 'x-t', 'aria-label': 'Ora măsurării' }); t.value = x.t || nowHM();
   const v = el('input', { type: 'text', inputmode: 'decimal', class: 'x-v', placeholder: unitName(), 'aria-label': 'Glicemie suplimentară' });
   if (x.v) v.value = fmt(x.v);
-  const c = el('select', { class: 'x-c', 'aria-label': 'Context' }, CTX_X.map(([a, b]) => el('option', { value: a }, b)));
-  c.value = x.c || 'spot';
+  const c = el('select', { class: 'x-c', 'aria-label': 'Context' }, EXTRA_OPTS.map(([a, b]) => el('option', { value: a }, b)));
+  c.value = x.c === 'dupa' ? 'p2' : (x.c || 'spot');
   const h = el('div', { class: 'hint' });
   const rm = el('button', { type: 'button', 'aria-label': 'Șterge măsurătoarea', onclick: () => { row.remove(); queueSave(); } }, '✕');
   const upd = () => {
@@ -298,7 +301,7 @@ function renderReport() {
       const g = r.g && r.g[k];
       h += g && g.v ? `<td class="${status(g.v, g.c)}">${fmt(g.v)}<br><small>${esc(CTXL[g.c] || '')}</small></td>` : '<td></td>';
     }
-    h += '<td>' + measures(r).filter(m => m.slot === 'x').map(m => `<span class="chip ${m.st}">${m.short} ${fmt(m.v)}</span>`).join(' ') + '</td>';
+    h += '<td>' + measures(r).filter(m => m.slot === 'x').map(m => `<span class="chip ${m.st}">${m.short} ${fmt(m.v)}</span> <small>${esc(CTXL[m.c] || '')}</small>`).join('<br>') + '</td>';
     const meals = MEALS.map(([k, l]) => r.m && r.m[k] ? `<b>${l}:</b> ${esc(r.m[k])}` : '').filter(Boolean).join('<br>');
     const oth = [r.ins && 'Insulină: ' + esc(r.ins) + ' u', r.act && 'Activitate: ' + esc(r.act), r.kg && r.kg + ' kg', r.ta && 'TA ' + esc(r.ta), r.note && esc(r.note)].filter(Boolean).join('<br>');
     h += `<td>${meals}</td><td>${oth}</td></tr>`;
