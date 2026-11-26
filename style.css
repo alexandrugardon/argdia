@@ -104,3 +104,8 @@ nav button{flex:1 1 33.33%;min-width:0;padding:11px 4px;font-size:1rem}
 .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 input[type=date],input[type=time]{padding:10px 6px}
 @media (max-width:340px){.row2{grid-template-columns:minmax(0,1fr)}}
+
+.numfield{display:block;width:100%;min-height:44px;margin-top:4px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;line-height:1.4;white-space:nowrap;overflow:hidden;-webkit-user-select:text;user-select:text}
+.numfield:empty::before{content:attr(data-placeholder);color:var(--muted);opacity:.7}
+.numfield:focus{outline:2px solid var(--acc);outline-offset:0}
+.card .inp>.numfield,.card .inp3>.numfield{margin:0}

@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.1';
+const VERSION = '2.2';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -86,16 +86,30 @@ function measures(rec) {
 
 /* ---------- Câmpuri numerice (fără sugestii de autofill, doar cifre) ---------- */
 function numeric(inp, dec) {
-  const at = { autocomplete: 'off', autocorrect: 'off', autocapitalize: 'off', spellcheck: 'false', inputmode: dec ? 'decimal' : 'numeric',
-    enterkeyhint: 'done', 'data-lpignore': 'true', 'data-1p-ignore': '', 'data-form-type': 'other' };
-  for (const k in at) inp.setAttribute(k, at[k]);
-  if (!inp.name) inp.setAttribute('name', 'argdia_' + (inp.id || inp.className || 'n') + '_' + Math.random().toString(36).slice(2, 6));
-  inp.addEventListener('input', () => {
-    let v = inp.value.replace(dec ? /[^0-9.,]/g : /[^0-9]/g, '');
+  // Câmp editabil care NU este <input>: Android nu îl tratează ca fiind completabil automat,
+  // deci nu mai apar sugestiile de parole/carduri/adrese deasupra tastaturii.
+  const d = document.createElement('div');
+  d.className = (inp.className ? inp.className + ' ' : '') + 'numfield';
+  if (inp.id) d.id = inp.id;
+  const at = { contenteditable: 'plaintext-only', role: 'textbox', tabindex: '0', inputmode: dec ? 'decimal' : 'numeric', enterkeyhint: 'done',
+    spellcheck: 'false', autocorrect: 'off', autocapitalize: 'off', 'aria-label': inp.getAttribute('aria-label') || inp.getAttribute('placeholder') || '',
+    'data-placeholder': inp.getAttribute('placeholder') || '' };
+  for (const k in at) d.setAttribute(k, at[k]);
+  Object.defineProperty(d, 'value', { get() { return d.textContent; }, set(v) { d.textContent = v == null ? '' : String(v); } });
+  if (inp.value) d.textContent = inp.value;
+  d.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); d.blur(); } });
+  d.addEventListener('input', () => {
+    let v = d.textContent.replace(dec ? /[^0-9.,]/g : /[^0-9]/g, '');
     if (dec) { const i = v.search(/[.,]/); if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/[.,]/g, ''); }
-    if (v !== inp.value) inp.value = v;
+    if (v !== d.textContent) {
+      d.textContent = v;
+      const r = document.createRange(); r.selectNodeContents(d); r.collapse(false);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    }
+    if (!v) d.innerHTML = '';
   });
-  return inp;
+  if (inp.parentNode) inp.replaceWith(d);
+  return d;
 }
 
 /* ---------- Formular "Azi" ---------- */
