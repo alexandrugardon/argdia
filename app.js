@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.7';
+const VERSION = '1.8';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -317,7 +317,7 @@ function loadSettingsUI() {
   for (const k of Object.keys(S.th)) $('#th_' + k).value = S.th[k];
   $('#clientId').value = S.clientId;
   for (const k of ['dim', 'pra', 'sea', 'i1', 'i2']) $('#t_' + k).value = S.times[k];
-  $('#ver').textContent = VERSION;
+  $('#ver').textContent = VERSION; $('#verTag').textContent = 'versiunea ' + VERSION;
   $('#sheetLink').innerHTML = S.sheetId ? `Foaia ta: <a href="https://docs.google.com/spreadsheets/d/${esc(S.sheetId)}" target="_blank" rel="noopener">deschide în Google Sheets</a>` : '';
   $('#connectBtn').textContent = S.auth ? 'Reconectează Google Drive' : 'Conectează Google Drive';
 }
