@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ARGDIA – Jurnal glicemie</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#b3261e">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="noprint">
+  <h1>🩸 ARGDIA</h1>
+  <span id="syncStatus" class="muted"></span>
+  <button id="syncBtn" title="Sincronizează cu Google Drive">⟳ Sincronizează</button>
+</header>
+<nav id="tabs" class="noprint">
+  <button data-tab="azi" class="on">Azi</button>
+  <button data-tab="istoric">Istoric</button>
+  <button data-tab="grafic">Grafic</button>
+  <button data-tab="calendar">Calendar</button>
+  <button data-tab="raport">Raport</button>
+  <button data-tab="setari">Setări</button>
+</nav>
+<main>
+  <section id="tab-azi" class="tab noprint">
+    <div class="datebar">
+      <button id="prevDay" aria-label="Ziua anterioară">‹</button>
+      <input type="date" id="date">
+      <button id="nextDay" aria-label="Ziua următoare">›</button>
+      <button id="todayBtn">Azi</button>
+    </div>
+    <h2>Glicemie</h2>
+    <div id="glucoseForm"></div>
+    <h2>Ce am mâncat</h2>
+    <div id="mealForm"></div>
+    <h2>Alte date</h2>
+    <label>Activitate fizică<input type="text" id="act" placeholder="ex: plimbare 30 min"></label>
+    <div class="row2">
+      <label>Greutate (kg)<input type="text" inputmode="decimal" id="kg"></label>
+      <label>Tensiune<input type="text" id="ta" placeholder="120/80"></label>
+    </div>
+    <label>Note / simptome<textarea id="note" rows="3"></textarea></label>
+    <p id="saved" class="muted" aria-live="polite"></p>
+  </section>
+
+  <section id="tab-istoric" class="tab noprint" hidden>
+    <div id="histList"></div>
+  </section>
+
+  <section id="tab-grafic" class="tab noprint" hidden>
+    <div class="seg" id="rangeSeg">
+      <button data-d="7">7 zile</button><button data-d="30" class="on">30 zile</button><button data-d="90">90 zile</button>
+    </div>
+    <canvas id="chart" height="280" role="img" aria-label="Grafic glicemie"></canvas>
+    <div id="chartStats"></div>
+    <p class="legend"><span class="dot ok"></span> în interval <span class="dot warn"></span> ușor în afara <span class="dot bad"></span> în afara intervalului</p>
+  </section>
+
+  <section id="tab-calendar" class="tab noprint" hidden>
+    <div class="datebar">
+      <button id="prevMonth">‹</button><strong id="monthLabel"></strong><button id="nextMonth">›</button>
+    </div>
+    <div id="calGrid"></div>
+    <p class="legend"><span class="dot ok"></span> în interval <span class="dot warn"></span> ușor în afara <span class="dot bad"></span> în afara intervalului</p>
+  </section>
+
+  <section id="tab-raport" class="tab" hidden>
+    <div class="noprint">
+      <div class="row2">
+        <label>De la<input type="date" id="repFrom"></label>
+        <label>Până la<input type="date" id="repTo"></label>
+      </div>
+      <button id="repGo" class="primary">Generează raport</button>
+      <button id="repPrint">🖨 Tipărește / Salvează PDF</button>
+    </div>
+    <div id="repOut"></div>
+  </section>
+
+  <section id="tab-setari" class="tab noprint" hidden>
+    <h2>Afișare</h2>
+    <label>Unitate de măsură
+      <select id="unit"><option value="mg">mg/dL</option><option value="mmol">mmol/L</option></select>
+    </label>
+    <h2>Praguri (în mg/dL)</h2>
+    <div class="row2">
+      <label>À jeun – min<input type="number" id="th_fMin"></label>
+      <label>À jeun – max<input type="number" id="th_fMax"></label>
+      <label>Înainte de masă – min<input type="number" id="th_iMin"></label>
+      <label>Înainte de masă – max<input type="number" id="th_iMax"></label>
+      <label>2h după masă – min<input type="number" id="th_low"></label>
+      <label>2h după masă – max<input type="number" id="th_dMax"></label>
+    </div>
+    <p class="muted">Valorile implicite sunt orientative. Confirmă pragurile cu medicul tău.</p>
+
+    <h2>Google Drive</h2>
+    <label>Google Client ID
+      <input type="text" id="clientId" placeholder="xxxxxxxx.apps.googleusercontent.com">
+    </label>
+    <button id="connectBtn" class="primary">Conectează Google Drive</button>
+    <p id="sheetLink" class="muted"></p>
+
+    <h2>Memento-uri (Calendar Google)</h2>
+    <div class="row2">
+      <label>Dimineața<input type="time" id="t_dim"></label>
+      <label>Prânz<input type="time" id="t_pra"></label>
+      <label>Seara<input type="time" id="t_sea"></label>
+    </div>
+    <button id="icsBtn">Descarcă memento-uri zilnice (.ics)</button>
+    <p class="muted">Deschide fișierul pe telefon și adaugă-l în Google Calendar. Alarmele vor suna zilnic, chiar și când aplicația e închisă.</p>
+
+    <h2>Date</h2>
+    <button id="csvBtn">Exportă CSV (copie de siguranță)</button>
+    <p class="muted">Versiune <span id="ver"></span></p>
+  </section>
+</main>
+<script src="app.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="window.gsiReady&&window.gsiReady()"></script>
+</body>
+</html>
