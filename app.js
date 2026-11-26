@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.9';
+const VERSION = '2.0';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -84,6 +84,20 @@ function measures(rec) {
   return out;
 }
 
+/* ---------- Câmpuri numerice (fără sugestii de autofill, doar cifre) ---------- */
+function numeric(inp, dec) {
+  const at = { autocomplete: 'off', autocorrect: 'off', autocapitalize: 'off', spellcheck: 'false', inputmode: dec ? 'decimal' : 'numeric',
+    enterkeyhint: 'done', 'data-lpignore': 'true', 'data-1p-ignore': '', 'data-form-type': 'other' };
+  for (const k in at) inp.setAttribute(k, at[k]);
+  if (!inp.name) inp.setAttribute('name', 'argdia_' + (inp.id || inp.className || 'n') + '_' + Math.random().toString(36).slice(2, 6));
+  inp.addEventListener('input', () => {
+    let v = inp.value.replace(dec ? /[^0-9.,]/g : /[^0-9]/g, '');
+    if (dec) { const i = v.search(/[.,]/); if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/[.,]/g, ''); }
+    if (v !== inp.value) inp.value = v;
+  });
+  return inp;
+}
+
 /* ---------- Formular "Azi" ---------- */
 let curDate = today();
 let saveTimer = null;
@@ -91,7 +105,7 @@ let saveTimer = null;
 function buildForms() {
   const gf = $('#glucoseForm'); gf.innerHTML = '';
   for (const [k, label] of SLOTS) {
-    const inp = el('input', { type: 'text', inputmode: 'decimal', id: 'g_' + k, placeholder: unitName(), 'aria-label': label + ' glicemie' });
+    const inp = numeric(el('input', { type: 'text', id: 'g_' + k, placeholder: unitName(), 'aria-label': label + ' glicemie' }), S.unit === 'mmol');
     const sel = el('select', { id: 'c_' + k, 'aria-label': label + ' context' }, CTX.map(([v, t]) => el('option', { value: v }, t)));
     sel.value = DEF_CTX[k];
     const hint = el('div', { class: 'hint', id: 'h_' + k });
@@ -109,7 +123,7 @@ function buildForms() {
 }
 function addExtraRow(x = {}) {
   const t = el('input', { type: 'time', class: 'x-t', 'aria-label': 'Ora măsurării' }); t.value = x.t || nowHM();
-  const v = el('input', { type: 'text', inputmode: 'decimal', class: 'x-v', placeholder: unitName(), 'aria-label': 'Glicemie suplimentară' });
+  const v = numeric(el('input', { type: 'text', class: 'x-v', placeholder: unitName(), 'aria-label': 'Glicemie suplimentară' }), S.unit === 'mmol');
   if (x.v) v.value = fmt(x.v);
   const c = el('select', { class: 'x-c', 'aria-label': 'Context' }, EXTRA_OPTS.map(([a, b]) => el('option', { value: a }, b)));
   c.value = x.c === 'dupa' ? 'p2' : (x.c || 'spot');
@@ -466,6 +480,8 @@ function refreshView() {
 
 /* ---------- Pornire ---------- */
 function init() {
+  numeric($('#ins'), true); numeric($('#kg'), true);
+  ['act', 'ta', 'note', 'date'].forEach(i => { const e = $('#' + i); e.setAttribute('autocomplete', 'off'); e.setAttribute('data-form-type', 'other'); });
   buildForms(); fillSuggestions(); loadSettingsUI(); loadDay(today());
   $$('#tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
   $('#date').addEventListener('change', e => { saveNow(); loadDay(e.target.value || today()); });
