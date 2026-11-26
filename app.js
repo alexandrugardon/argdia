@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '1.0';
+const VERSION = '1.1';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (t, a = {}, ...c) => {
@@ -30,7 +30,7 @@ const LS = {
 const DEF_S = {
   unit: 'mg', clientId: '', sheetId: '', auth: false,
   th: { low: 70, fMin: 70, fMax: 100, iMin: 70, iMax: 130, dMax: 140 },
-  times: { dim: '07:30', pra: '13:00', sea: '20:00' }
+  times: { dim: '07:30', pra: '13:00', sea: '20:00', i1: '21:00', i2: '21:30' }
 };
 let S = LS.get('argdia_settings', {});
 S = { ...DEF_S, ...S, th: { ...DEF_S.th, ...(S.th || {}) }, times: { ...DEF_S.times, ...(S.times || {}) } };
@@ -123,14 +123,14 @@ function loadDay(d) {
     updHint(k);
   }
   for (const [k] of MEALS) $('#m_' + k).value = (r.m && r.m[k]) || '';
-  $('#act').value = r.act || ''; $('#kg').value = r.kg || ''; $('#ta').value = r.ta || ''; $('#note').value = r.note || '';
+  $('#ins').value = r.ins || ''; $('#act').value = r.act || ''; $('#kg').value = r.kg || ''; $('#ta').value = r.ta || ''; $('#note').value = r.note || '';
   $('#saved').textContent = '';
 }
 function collect() {
-  const r = { g: {}, m: {}, act: $('#act').value.trim(), kg: $('#kg').value.trim(), ta: $('#ta').value.trim(), note: $('#note').value.trim() };
+  const r = { g: {}, m: {}, ins: $('#ins').value.trim(), act: $('#act').value.trim(), kg: $('#kg').value.trim(), ta: $('#ta').value.trim(), note: $('#note').value.trim() };
   for (const [k] of SLOTS) { const v = toMg($('#g_' + k).value); if (v) r.g[k] = { v, c: $('#c_' + k).value }; }
   for (const [k] of MEALS) { const t = $('#m_' + k).value.trim(); if (t) r.m[k] = t; }
-  const empty = !Object.keys(r.g).length && !Object.keys(r.m).length && !r.act && !r.kg && !r.ta && !r.note;
+  const empty = !Object.keys(r.g).length && !Object.keys(r.m).length && !r.ins && !r.act && !r.kg && !r.ta && !r.note;
   return empty ? null : r;
 }
 function queueSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 600); }
@@ -154,7 +154,7 @@ function renderHist() {
     const chips = measures(r).map(m => `<span class="chip ${m.st}">${esc(m.label.slice(0, 3))}. ${fmt(m.v)}</span>`).join(' ');
     const meals = MEALS.map(([k, l]) => r.m && r.m[k] ? l + ': ' + esc(r.m[k]) : '').filter(Boolean).join(' · ');
     const b = el('button', { class: 'hist', onclick: () => { openDay(d); } });
-    b.innerHTML = `<b>${roDate(d)}</b><br>${chips || '<span class="muted">fără glicemie</span>'}<div class="meals">${meals}</div>`;
+    b.innerHTML = `<b>${roDate(d)}</b><br>${chips || '<span class="muted">fără glicemie</span>'}<div class="meals">${r.ins ? '💉 ' + esc(r.ins) + ' u · ' : ''}${meals}</div>`;
     box.append(b);
   }
 }
@@ -271,7 +271,7 @@ function renderReport() {
       h += g && g.v ? `<td class="${status(g.v, g.c)}">${fmt(g.v)}<br><small>${esc(CTXL[g.c] || '')}</small></td>` : '<td></td>';
     }
     const meals = MEALS.map(([k, l]) => r.m && r.m[k] ? `<b>${l}:</b> ${esc(r.m[k])}` : '').filter(Boolean).join('<br>');
-    const oth = [r.act && 'Activitate: ' + esc(r.act), r.kg && r.kg + ' kg', r.ta && 'TA ' + esc(r.ta), r.note && esc(r.note)].filter(Boolean).join('<br>');
+    const oth = [r.ins && 'Insulină: ' + esc(r.ins) + ' u', r.act && 'Activitate: ' + esc(r.act), r.kg && r.kg + ' kg', r.ta && 'TA ' + esc(r.ta), r.note && esc(r.note)].filter(Boolean).join('<br>');
     h += `<td>${meals}</td><td>${oth}</td></tr>`;
   }
   h += '</table>';
@@ -284,7 +284,7 @@ function loadSettingsUI() {
   $('#unit').value = S.unit;
   for (const k of Object.keys(S.th)) $('#th_' + k).value = S.th[k];
   $('#clientId').value = S.clientId;
-  for (const [k] of SLOTS) $('#t_' + k).value = S.times[k];
+  for (const k of ['dim', 'pra', 'sea', 'i1', 'i2']) $('#t_' + k).value = S.times[k];
   $('#ver').textContent = VERSION;
   $('#sheetLink').innerHTML = S.sheetId ? `Foaia ta: <a href="https://docs.google.com/spreadsheets/d/${esc(S.sheetId)}" target="_blank" rel="noopener">deschide în Google Sheets</a>` : '';
   $('#connectBtn').textContent = S.auth ? 'Reconectează Google Drive' : 'Conectează Google Drive';
@@ -301,10 +301,15 @@ function exportCSV() {
 function makeICS() {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
   const day = today().replace(/-/g, '');
-  const ev = SLOTS.map(([k, l]) => {
-    const t = (S.times[k] || '08:00').replace(':', '') + '00';
+  const items = [
+    ...SLOTS.map(([k, l]) => [k, S.times[k], `Măsoară glicemia (${l.toLowerCase()})`]),
+    ['i1', S.times.i1, 'Scoate insulina din frigider'],
+    ['i2', S.times.i2, 'Administrează-ți insulina']
+  ];
+  const ev = items.map(([k, tm, title]) => {
+    const t = (tm || '08:00').replace(':', '') + '00';
     return ['BEGIN:VEVENT', `UID:argdia-${k}@argdia`, `DTSTAMP:${stamp}`, `DTSTART:${day}T${t}`, 'DURATION:PT10M', 'RRULE:FREQ=DAILY',
-      `SUMMARY:Măsoară glicemia (${l.toLowerCase()})`, 'BEGIN:VALARM', 'TRIGGER:PT0M', 'ACTION:DISPLAY', 'DESCRIPTION:Măsoară glicemia și notează în ARGDIA', 'END:VALARM', 'END:VEVENT'].join('\r\n');
+      `SUMMARY:${title}`, 'BEGIN:VALARM', 'TRIGGER:PT0M', 'ACTION:DISPLAY', `DESCRIPTION:${title}`, 'END:VALARM', 'END:VEVENT'].join('\r\n');
   });
   download('argdia-memento.ics', ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ARGDIA//RO', ...ev, 'END:VCALENDAR'].join('\r\n'), 'text/calendar');
 }
@@ -355,12 +360,12 @@ function tableRows() {
   const head = ['Data'];
   SLOTS.forEach(([k, l]) => head.push('Glicemie ' + l + ' (mg/dL)', 'Context ' + l));
   MEALS.forEach(([, l]) => head.push(l));
-  head.push('Activitate', 'Greutate', 'Tensiune', 'Note', 'Actualizat', 'Sters');
+  head.push('Activitate', 'Greutate', 'Tensiune', 'Note', 'Actualizat', 'Sters', 'Insulina (unitati)');
   const rows = Object.keys(DB).sort().map(d => {
     const r = DB[d], row = [d];
     SLOTS.forEach(([k]) => { const g = r.g && r.g[k]; row.push(g ? g.v : '', g ? g.c : ''); });
     MEALS.forEach(([k]) => row.push((r.m && r.m[k]) || ''));
-    row.push(r.act || '', r.kg || '', r.ta || '', r.note || '', r.upd || '', r.del ? 'da' : '');
+    row.push(r.act || '', r.kg || '', r.ta || '', r.note || '', r.upd || '', r.del ? 'da' : '', r.ins || '');
     return row;
   });
   return { head, rows };
@@ -372,6 +377,7 @@ function rowToRec(row) {
   MEALS.forEach(([k]) => { if (row[i]) r.m[k] = String(row[i]); i++; });
   r.act = String(row[i++] ?? ''); r.kg = String(row[i++] ?? ''); r.ta = String(row[i++] ?? ''); r.note = String(row[i++] ?? '');
   r.upd = String(row[i++] ?? ''); if (row[i] === 'da') r.del = true;
+  r.ins = String(row[i + 1] ?? '');
   return r;
 }
 async function syncNow(interactive) {
@@ -429,7 +435,7 @@ function init() {
   $('#prevDay').onclick = () => { saveNow(); loadDay(addDays(curDate, -1)); };
   $('#nextDay').onclick = () => { saveNow(); loadDay(addDays(curDate, 1)); };
   $('#todayBtn').onclick = () => { saveNow(); loadDay(today()); };
-  ['act', 'kg', 'ta', 'note'].forEach(i => $('#' + i).addEventListener('input', queueSave));
+  ['ins', 'act', 'kg', 'ta', 'note'].forEach(i => $('#' + i).addEventListener('input', queueSave));
   $$('#rangeSeg button').forEach(b => b.onclick = () => {
     chartDays = +b.dataset.d; $$('#rangeSeg button').forEach(x => x.classList.toggle('on', x === b)); renderChart();
   });
@@ -441,7 +447,7 @@ function init() {
   $('#unit').onchange = e => { saveNow(); S.unit = e.target.value; saveS(); buildForms(); fillSuggestions(); loadDay(curDate); refreshView(); };
   for (const k of Object.keys(S.th)) $('#th_' + k).onchange = e => { const v = parseInt(e.target.value, 10); if (v > 0) { S.th[k] = v; saveS(); loadDay(curDate); } };
   $('#clientId').onchange = e => { S.clientId = e.target.value.trim(); S.sheetId = ''; S.auth = false; saveS(); tokenClient = null; initGoogle(); loadSettingsUI(); };
-  for (const [k] of SLOTS) $('#t_' + k).onchange = e => { S.times[k] = e.target.value; saveS(); };
+  for (const k of ['dim', 'pra', 'sea', 'i1', 'i2']) $('#t_' + k).onchange = e => { S.times[k] = e.target.value; saveS(); };
   $('#connectBtn').onclick = () => { S.clientId = $('#clientId').value.trim(); saveS(); initGoogle(); syncNow(true); };
   $('#syncBtn').onclick = () => syncNow(true);
   $('#icsBtn').onclick = makeICS;
